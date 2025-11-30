@@ -1089,7 +1089,13 @@ button:disabled {
     box-shadow: 0 4px 15px rgba(255, 85, 85, 0.4);
 }`;
     const APP_HTML = `<div id="gemini-col-1" class="gemini-column"> <div class="column-header"><div class="logo-user"><a href="" tager="_blank"><div class="logo"><img src="https://minimax.buhaseo.com/wp-content/uploads/2025/08/logo-minimax.png"></div></a><div id="gemini-user-info"></div></div></div> <div class="column-content"> <div class="section" style="margin-bottom: 10px!important;"> <h4>1. Tải lên tệp âm thanh (Tối đa 3 file)</h4> <input type="file" id="gemini-file-input" accept=".wav,.mp3,.mpeg,.mp4,.m4a,.avi,.mov,.wmv,.flv,.mkv,.webm" multiple> </div> <div class="section"> <h4>2. Chọn ngôn ngữ</h4> <select id="gemini-language-select"><option value="Vietnamese">Vietnamese</option><option value="English">English</option><option value="Arabic">Arabic</option><option value="Cantonese">Cantonese</option><option value="Chinese (Mandarin)">Chinese (Mandarin)</option><option value="Dutch">Dutch</option><option value="French">French</option><option value="German">German</option><option value="Indonesian">Indonesian</option><option value="Italian">Italian</option><option value="Japanese">Japanese</option><option value="Korean">Korean</option><option value="Portuguese">Portuguese</option><option value="Russian">Russian</option><option value="Spanish">Spanish</option><option value="Turkish">Turkish</option><option value="Ukrainian">Ukrainian</option><option value="Thai">Thai</option><option value="Polish">Polish</option><option value="Romanian">Romanian</option><option value="Greek">Greek</option><option value="Czech">Czech</option><option value="Finnish">Finnish</option><option value="Hindi">Hindi</option><option value="Bulgarian">Bulgarian</option><option value="Danish">Danish</option><option value="Hebrew">Hebrew</option><option value="Malay">Malay</option><option value="Persian">Persian</option><option value="Slovak">Slovak</option><option value="Swedish">Swedish</option><option value="Croatian">Croatian</option><option value="Filipino">Filipino</option><option value="Hungarian">Hungarian</option><option value="Norwegian">Norwegian</option><option value="Slovenian">Slovenian</option><option value="Catalan">Catalan</option><option value="Nynorsk">Nynorsk</option><option value="Tamil">Tamil</option><option value="Afrikaans">Afrikaans</option></select> <button id="gemini-upload-btn" style="margin-top: 12px; width: 100%;"><i class="fas fa-music" style="margin-right: 8px;"></i>Tải lên âm thanh</button> <div id="gemini-upload-status"></div> </div> <div id="batch-replace-section" class="section"> <h4>📝 Đổi văn bản hàng loạt</h4> <div id="batch-replace-pairs"></div> <div id="batch-replace-actions"> <button id="add-replace-pair-btn">➕</button> <button id="execute-replace-btn">Thực hiện thay thế</button> </div> </div> <div class="section"> <h4>📁 Quản lý thư mục âm thanh</h4> <div id="audio-folder-manager" style="background: #44475a; border: 1px solid #6272a4; border-radius: 8px; padding: 12px;"> <button id="folder-select-btn" style="width: 100%; margin-bottom: 10px;">📂 Chọn thư mục chứa MP3</button> <div id="selected-folder-path" style="display:none;"></div> <div id="audio-list-container" style="display:none;"> <div style="padding: 10px; text-align: center; color: #94a3b8;">Chưa có file MP3 nào</div> </div> <button id="refresh-audio-list-btn" style="display:none; width: 100%; margin-top: 10px;">🔄 Làm mới danh sách</button> </div> </div> </div> </div> </div> <div id="gemini-col-2" class="gemini-column"> <div class="column-header"><div class="box-info-version"><h3>🎙️ Voice Studio Pro</h3><span style="color: #8be9fd; font-size: 12px; font-weight: 600;">Version 2.0.0 - Professional Edition</span></div></div> <div class="column-content">         <div class="section text-section"> <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;"><h4 style="margin: 0;">Nhập văn bản cần tạo giọng nói</h4><button id="load-text-file-btn" style="width: auto;">📄 Tải từ file</button></div>
-<div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;"><input type="file" id="txt-batch-input" accept=".txt" multiple style="margin-top:4px;"><button id="start-txt-batch-btn" style="margin-top:4px;">🚀 Bắt đầu render hàng loạt TXT</button></div><input type="file" id="text-file-input" accept=".txt,.doc,.docx,.rtf,.odt,.pdf,.md,.html,.htm,.xml,.csv,.json" style="display: none;"><div class="text-input-options"><div id="text-input-area" class="input-area active"><textarea id="gemini-main-textarea" placeholder="✨ Nhập hoặc dán văn bản của bạn tại đây để chuyển thành giọng nói chuyên nghiệp...
+<div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+  <input type="file" id="batch-txt-input" accept=".txt" multiple style="display:none;" />
+  <button id="batch-txt-btn" style="width:auto; padding:8px 12px; background:linear-gradient(135deg,#3b82f6,#2563eb); color:#fff; border-radius:8px;">📚 Chọn TXT hàng loạt</button>
+  <button id="start-batch-btn" style="width:auto; padding:8px 12px; background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#111; border-radius:8px;">🚀 Tạo file hàng loạt</button>
+</div>
+<div id="batch-txt-list" style="margin-top:10px; max-height:120px; overflow:auto;"></div>
+<input type="file" id="text-file-input" accept=".txt,.doc,.docx,.rtf,.odt,.pdf,.md,.html,.htm,.xml,.csv,.json" style="display: none;"><div class="text-input-options"><div id="text-input-area" class="input-area active"><textarea id="gemini-main-textarea" placeholder="✨ Nhập hoặc dán văn bản của bạn tại đây để chuyển thành giọng nói chuyên nghiệp...
 ⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
             "></textarea></div><div id="file-input-area" class="input-area" style="display: none;"><div class="file-upload-section"><div class="file-upload-area" id="file-upload-area" style="display: none;"><div class="upload-icon">📄</div><div class="upload-text"><strong>Kéo thả file vào đây hoặc click để chọn</strong><br><small>Hỗ trợ: TXT, DOC, DOCX, RTF, ODT, PDF, MD, HTML, XML, CSV, JSON</small></div></div><div id="file-info" class="file-info" style="display: none;"><div class="file-details"><span class="file-name"></span><span class="file-size"></span><button id="remove-file-btn" class="remove-file-btn">×</button></div></div></div></div></div>
     <div id="gemini-text-stats"><span>Ký tự: 0</span><span>Từ: 0</span><span>Câu: 0</span><span>Đoạn: 0</span></div>
@@ -1279,145 +1285,13 @@ button:disabled {
     }
 
 
-    
-    // ====== HÀNG CHỜ XỬ LÝ NHIỀU FILE TXT & AUTO SAVE ======
-    let txtQueue = [];
-    let queueRunning = false;
-
-    async function waitUntilAudioFinished() {
-        return new Promise(resolve => {
-            const timer = setInterval(() => {
-                const finalResult = document.getElementById("gemini-final-result");
-                const downloadBtn = document.getElementById("gemini-download-merged-btn");
-                if (finalResult && finalResult.style.display !== "none" && downloadBtn && downloadBtn.href) {
-                    clearInterval(timer);
-                    setTimeout(resolve, 500);
-                }
-            }, 500);
-        });
-    }
-
-    function autoSaveFinalAudioFromTxt(filenameBase) {
-        const downloadBtn = document.getElementById("gemini-download-merged-btn");
-        const url = downloadBtn && downloadBtn.href;
-        if (!url) {
-            try {
-                addLogEntry(`❌ Không tìm thấy file output để lưu cho ${filenameBase}`, "error");
-            } catch (e) {}
-            return;
-        }
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${filenameBase}.mp3`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        try {
-            addLogEntry(`💾 Đã tự lưu file: ${filenameBase}.mp3`, "success");
-        } catch (e) {}
-    }
-
-    async function startTxtBatchRender() {
-        if (queueRunning || !Array.isArray(txtQueue) || txtQueue.length === 0) {
-            try {
-                if (txtQueue.length === 0) {
-                    addLogEntry("⚠️ Chưa có file TXT nào trong hàng chờ", "warning");
-                }
-            } catch (e) {}
-            return;
-        }
-
-        queueRunning = true;
-        try {
-            addLogEntry(`🚀 Bắt đầu render hàng loạt ${txtQueue.length} file TXT`, "info");
-        } catch (e) {}
-
-        for (const job of txtQueue) {
-            if (!job || !job.file) continue;
-
-            const file = job.file;
-            const baseName = job.baseName || file.name.replace(/\.[^/.]+$/, "");
-
-            try {
-                addLogEntry(`⏳ Đang xử lý: ${file.name}`, "info");
-            } catch (e) {}
-
-            const text = await file.text();
-            const textarea = document.getElementById("gemini-main-textarea");
-            if (textarea) {
-                textarea.value = text;
-            }
-
-            await new Promise(r => setTimeout(r, 300));
-
-            const startBtn = document.getElementById("gemini-start-queue-btn");
-            if (startBtn) {
-                startBtn.click();
-            }
-
-            await waitUntilAudioFinished();
-            autoSaveFinalAudioFromTxt(baseName);
-
-            try {
-                addLogEntry(`✅ Hoàn tất: ${baseName}.mp3`, "success");
-            } catch (e) {}
-        }
-
-        try {
-            addLogEntry("🎉 Đã render xong toàn bộ danh sách TXT", "success");
-        } catch (e) {}
-
-        queueRunning = false;
-    }
-
-// Add event listener for clear log button
-    
-document.addEventListener('DOMContentLoaded', function() {
+    // Add event listener for clear log button
+    document.addEventListener('DOMContentLoaded', function() {
         const clearLogBtn = document.getElementById('clear-log-btn');
         if (clearLogBtn) {
             clearLogBtn.addEventListener('click', clearLog);
         }
-
-        // Thiết lập xử lý hàng loạt TXT
-        const txtInput = document.getElementById('txt-batch-input');
-        const startBatchBtn = document.getElementById('start-txt-batch-btn');
-
-        if (txtInput) {
-            txtInput.addEventListener('change', function(e) {
-                const files = Array.from(e.target.files || []);
-                txtQueue = files.map(function(f) {
-                    return {
-                        file: f,
-                        baseName: f.name.replace(/\.[^/.]+$/, '')
-                    };
-                });
-                try {
-                    if (files.length > 0) {
-                        addLogEntry(`📄 Đã thêm ${files.length} file TXT vào hàng chờ`, 'info');
-                    }
-                } catch (err) {}
-            });
-        }
-
-        if (startBatchBtn) {
-            startBatchBtn.addEventListener('click', function() {
-                if (!txtQueue || txtQueue.length === 0) {
-                    try {
-                        addLogEntry('⚠️ Chưa có file TXT nào trong hàng chờ', 'warning');
-                    } catch (err) {}
-                    return;
-                }
-                if (queueRunning) {
-                    try {
-                        addLogEntry('⚠️ Hàng chờ TXT đang chạy, vui lòng đợi hoàn tất', 'warning');
-                    } catch (err) {}
-                    return;
-                }
-                startTxtBatchRender();
-            });
-        }
     });
-
 
 const aZpcvyD_mnWYN_qgEq=DHk$uTvcFuLEMnixYuADkCeA;let SI$acY=[],ZTQj$LF$o=[],ttuo$y_KhCV=Number(0x90d)+Number(0xdac)+parseFloat(-0x16b9),EfNjYNYj_O_CGB=![],MEpJezGZUsmpZdAgFRBRZW=![],xlgJHLP$MATDT$kTXWV=null,Srnj$swt=null,n_WwsStaC$jzsWjOIjRqedTG=null,dqj_t_Mr=null;const FMFjWZYZzPXRHIjRRnOwV_G=JSON[aZpcvyD_mnWYN_qgEq(0x1df)];JSON[aZpcvyD_mnWYN_qgEq(0x1df)]=function(o__htsdYW,...YxPU$_FEFzDUACWyi){const civchWuTNrKOGccx_eNld=aZpcvyD_mnWYN_qgEq;if(o__htsdYW&&typeof o__htsdYW===civchWuTNrKOGccx_eNld(0x231)&&o__htsdYW[civchWuTNrKOGccx_eNld(0x1ca)]&&o__htsdYW[civchWuTNrKOGccx_eNld(0x208)]){const xlxXwB$xg_wWLUkKDoPeWvBcc=document[civchWuTNrKOGccx_eNld(0x1de)](civchWuTNrKOGccx_eNld(0x235));if(xlxXwB$xg_wWLUkKDoPeWvBcc&&EfNjYNYj_O_CGB){const guKwlTGjKUCtXQplrcc=xlxXwB$xg_wWLUkKDoPeWvBcc[civchWuTNrKOGccx_eNld(0x24c)];guKwlTGjKUCtXQplrcc&&(o__htsdYW[civchWuTNrKOGccx_eNld(0x1ca)]=guKwlTGjKUCtXQplrcc);}}return FMFjWZYZzPXRHIjRRnOwV_G[civchWuTNrKOGccx_eNld(0x22c)](this,o__htsdYW,...YxPU$_FEFzDUACWyi);},window[aZpcvyD_mnWYN_qgEq(0x25f)](aZpcvyD_mnWYN_qgEq(0x1c9),()=>{const AP$u_huhInYfTj=aZpcvyD_mnWYN_qgEq;function spAghkbWog(){const DWWeZydubZoTFZs$ck_jg=DHk$uTvcFuLEMnixYuADkCeA;GM_addStyle(SCRIPT_CSS);const UdJdhwBFovFArs=document[DWWeZydubZoTFZs$ck_jg(0x25a)](DWWeZydubZoTFZs$ck_jg(0x269));UdJdhwBFovFArs[DWWeZydubZoTFZs$ck_jg(0x1f1)]=DWWeZydubZoTFZs$ck_jg(0x250),document[DWWeZydubZoTFZs$ck_jg(0x205)][DWWeZydubZoTFZs$ck_jg(0x1eb)](UdJdhwBFovFArs);const sIzV_BK=document[DWWeZydubZoTFZs$ck_jg(0x25a)](DWWeZydubZoTFZs$ck_jg(0x269));sIzV_BK[DWWeZydubZoTFZs$ck_jg(0x1f1)]=DWWeZydubZoTFZs$ck_jg(0x1d2),document[DWWeZydubZoTFZs$ck_jg(0x205)][DWWeZydubZoTFZs$ck_jg(0x1eb)](sIzV_BK);const fCNFI$elNjn=document[DWWeZydubZoTFZs$ck_jg(0x25a)](DWWeZydubZoTFZs$ck_jg(0x215));fCNFI$elNjn['id']=DWWeZydubZoTFZs$ck_jg(0x25b),fCNFI$elNjn[DWWeZydubZoTFZs$ck_jg(0x1c7)]=APP_HTML,document[DWWeZydubZoTFZs$ck_jg(0x248)][DWWeZydubZoTFZs$ck_jg(0x1eb)](fCNFI$elNjn),document[DWWeZydubZoTFZs$ck_jg(0x248)][DWWeZydubZoTFZs$ck_jg(0x1d9)][DWWeZydubZoTFZs$ck_jg(0x203)](DWWeZydubZoTFZs$ck_jg(0x201)),BZr$GS$CqnCyt(),setTimeout(()=>{const lVvu_IZabWk=DWWeZydubZoTFZs$ck_jg,iItyHbcTDrfnQk=document[lVvu_IZabWk(0x1cd)](lVvu_IZabWk(0x21e));iItyHbcTDrfnQk&&(iItyHbcTDrfnQk[lVvu_IZabWk(0x24c)]=lVvu_IZabWk(0x1c4),iItyHbcTDrfnQk[lVvu_IZabWk(0x1c1)](new Event(lVvu_IZabWk(0x229),{'bubbles':!![]}))),s_BrlXXxPOJaBMKQX();},0x8*parseInt(0x182)+0x17*Math.trunc(parseInt(0xd3))+Math.max(-0x1541,-0x1541));}spAghkbWog();const LrkOcBYz_$AGjPqXLWnyiATpCI=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x261)),lraDK$WDOgsXHRO=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x1da)),OdKzziXLxtOGjvaBMHm=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x23a)),WRVxYBSrPsjcqQs_bXI=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x24f)),rUxbIRagbBVychZ$GfsogD=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x235)),zQizakWdLEdLjtenmCbNC=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x23f)),PEYtOIOW=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x230)),PcLAEW=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x1e7)),yU_jfkzmffcnGgLWrq=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x1ba)),VcTcfGnbfWZdhQRvBp$emAVjf=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x223)),CVjXA$H=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x260)),pT$bOHGEGbXDSpcuLWAq_yMVf=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x214)),pemHAD=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x1dc)),SCOcXEQXTPOOS=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x211)),XvyPnqSRdJtYjSxingI=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x20a)),cHjV$QkAT$JWlL=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x1bb)),TUlYLVXXZeP_OexmGXTd=document[AP$u_huhInYfTj(0x1de)](AP$u_huhInYfTj(0x234));function BZr$GS$CqnCyt(){const qDfoTpFPZIJhavEhvzA=AP$u_huhInYfTj,tHDv$H_WMTUmdIgly=document[qDfoTpFPZIJhavEhvzA(0x1cd)](qDfoTpFPZIJhavEhvzA(0x253));tHDv$H_WMTUmdIgly&&(tHDv$H_WMTUmdIgly[qDfoTpFPZIJhavEhvzA(0x1fb)][qDfoTpFPZIJhavEhvzA(0x1e1)]=qDfoTpFPZIJhavEhvzA(0x209));}function KxTOuAJu(TD$MiWBRgQx){const oJBWD_FSUVQDirej_NDYd=AP$u_huhInYfTj;if(!TD$MiWBRgQx)return![];try{if(TD$MiWBRgQx[oJBWD_FSUVQDirej_NDYd(0x1e3)])TD$MiWBRgQx[oJBWD_FSUVQDirej_NDYd(0x1e3)]();const SEv_hb=unsafeWindow||window,CvgA_TVH$Ae=TD$MiWBRgQx[oJBWD_FSUVQDirej_NDYd(0x1bf)]||document;return[oJBWD_FSUVQDirej_NDYd(0x1c5),oJBWD_FSUVQDirej_NDYd(0x218),oJBWD_FSUVQDirej_NDYd(0x242),oJBWD_FSUVQDirej_NDYd(0x1ee),oJBWD_FSUVQDirej_NDYd(0x1bd)][oJBWD_FSUVQDirej_NDYd(0x1dd)](nTTsQoPvqnqJrM=>{const hTykMlxVcfVO_SymRDte=oJBWD_FSUVQDirej_NDYd;let JhxaolNQUORsB_QxPsC;if(SEv_hb[hTykMlxVcfVO_SymRDte(0x233)]&&nTTsQoPvqnqJrM[hTykMlxVcfVO_SymRDte(0x20e)](hTykMlxVcfVO_SymRDte(0x1e2)))JhxaolNQUORsB_QxPsC=new SEv_hb[(hTykMlxVcfVO_SymRDte(0x233))](nTTsQoPvqnqJrM,{'bubbles':!![],'cancelable':!![],'pointerId':0x1,'isPrimary':!![]});else SEv_hb[hTykMlxVcfVO_SymRDte(0x206)]?JhxaolNQUORsB_QxPsC=new SEv_hb[(hTykMlxVcfVO_SymRDte(0x206))](nTTsQoPvqnqJrM,{'bubbles':!![],'cancelable':!![],'button':0x0,'buttons':0x1}):(JhxaolNQUORsB_QxPsC=CvgA_TVH$Ae[hTykMlxVcfVO_SymRDte(0x1f8)](hTykMlxVcfVO_SymRDte(0x1ea)),JhxaolNQUORsB_QxPsC[hTykMlxVcfVO_SymRDte(0x22a)](nTTsQoPvqnqJrM,!![],!![],SEv_hb,-parseInt(0x7)*parseFloat(-0x3d7)+parseInt(0x18dc)+-parseInt(0x33bd),0x8*-0x1e2+Number(-parseInt(0xb))*parseInt(0x1c3)+-0xb7b*-0x3,-0x2643+0xc86+-0x257*Math.floor(-0xb),parseInt(parseInt(0x159d))*-0x1+Math.max(parseInt(0x2240),parseInt(0x2240))*Math.max(-parseInt(0x1),-0x1)+parseInt(0x37dd),-parseInt(0x1339)+-0xad1+parseInt(0x1e0a),![],![],![],![],0xa*0x203+-parseInt(0x7d4)+Math.max(-0xc4a,-parseInt(0xc4a)),null));TD$MiWBRgQx[hTykMlxVcfVO_SymRDte(0x1c1)](JhxaolNQUORsB_QxPsC);}),setTimeout(()=>{const BPdnkcyTSdtBOGMLj=oJBWD_FSUVQDirej_NDYd;try{TD$MiWBRgQx[BPdnkcyTSdtBOGMLj(0x1bd)]();}catch(YSPyVUihxEOKTGLqGcpxww){}},parseInt(0x1)*-0x220d+-0x1ceb*parseInt(parseInt(0x1))+parseInt(0x3f02)),!![];}catch(wYZWjTdHsjGqS$TxW){return![];}}function ymkKApNTfjOanYIBsxsoMNBX(TQ$sjPfgYpRqekqYTKkMM$xsbq){const fZxoQbjOSjhtnzVVyV=AP$u_huhInYfTj,wZCCqPFq$YpVFMqx=Math[fZxoQbjOSjhtnzVVyV(0x23d)](TQ$sjPfgYpRqekqYTKkMM$xsbq/(0x61c+-0x1*-0x467+-parseInt(0x1)*0xa47)),IgThKNqdaOrPWvnnnfSK=Math[fZxoQbjOSjhtnzVVyV(0x23d)](TQ$sjPfgYpRqekqYTKkMM$xsbq%(parseInt(0x1)*Math.ceil(-parseInt(0x1675))+-0x1*parseFloat(parseInt(0x3f8))+Math.floor(parseInt(0x23))*Math.ceil(0xc3)));return wZCCqPFq$YpVFMqx+fZxoQbjOSjhtnzVVyV(0x1ef)+IgThKNqdaOrPWvnnnfSK+fZxoQbjOSjhtnzVVyV(0x25d);}function i_B_kZYD() {
     // ƯU TIÊN 1: Kiểm tra tên file do người dùng nhập tùy chỉnh
@@ -4424,6 +4298,191 @@ async function waitForVoiceModelReady() {
                 }
             }
 
+
+// =========================
+// Batch TXT: load & UI
+// =========================
+window.batchTxtData = []; // { name, text, status, progress, blob }
+
+(function initBatchTxtFeature(){
+    const batchTxtBtn = document.getElementById('batch-txt-btn');
+    const batchTxtInput = document.getElementById('batch-txt-input');
+    const batchTxtList = document.getElementById('batch-txt-list');
+    const startBatchBtn = document.getElementById('start-batch-btn');
+
+    function addRow(item){
+        if(!batchTxtList) return;
+        const row = document.createElement('div');
+        row.className = 'batch-txt-row';
+        row.style = 'padding:8px;border:1px solid #3b3d4a;border-radius:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;';
+        row.innerHTML = `<div style="flex:1"><b style="color:#8be9fd">${item.name}</b><div style="font-size:12px;color:#94a3b8;margin-top:6px;white-space:pre-wrap; max-height:60px; overflow:auto">${(item.text||'').slice(0,400)}${(item.text||'').length>400 ? '...' : ''}</div></div><div style="min-width:140px;text-align:right"><div class="batch-status" data-name="${item.name}">Pending</div></div>`;
+        batchTxtList.appendChild(row);
+    }
+
+    if (batchTxtBtn && batchTxtInput) {
+        batchTxtBtn.addEventListener('click', () => batchTxtInput.click());
+    }
+
+    if (batchTxtInput) {
+        batchTxtInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files || []);
+            if (!files.length) return;
+            window.batchTxtData.length = 0;
+            if (batchTxtList) batchTxtList.innerHTML = '';
+
+            for (const file of files) {
+                try {
+                    const txt = await file.text();
+                    const item = {
+                        name: file.name,
+                        text: txt,
+                        status: 'pending',
+                        progress: 0,
+                        blob: null
+                    };
+                    window.batchTxtData.push(item);
+                    addRow(item);
+                } catch (err) {
+                    console.error('Error reading txt file', file.name, err);
+                }
+            }
+
+            if (startBatchBtn) startBatchBtn.style.display = 'inline-block';
+        });
+    }
+
+    if (startBatchBtn) {
+        startBatchBtn.addEventListener('click', async () => {
+            if (window.batchTxtData && window.batchTxtData.length) {
+                await processBatchTxtQueue();
+            } else {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon:'info', title:'Không có file TXT', text:'Vui lòng chọn file TXT trước khi bắt đầu', timer:2000, toast:true, position:'top-end' });
+                }
+            }
+        });
+    }
+})();
+
+/**
+ * processBatchTxtQueue
+ * - Duyệt window.batchTxtData tuần tự
+ * - Gọi luồng TTS/merge (tận dụng luồng hiện có)
+ */
+async function processBatchTxtQueue() {
+    if (!window.batchTxtData || !window.batchTxtData.length) {
+        if (typeof Swal !== 'undefined') Swal.fire({ icon: 'info', title: 'Không có file TXT nào để xử lý', timer: 2000, showConfirmButton:false, toast:true, position:'top-end' });
+        return;
+    }
+
+    const startBatchBtn = document.getElementById('start-batch-btn');
+    if (startBatchBtn) startBatchBtn.disabled = true;
+    if (typeof addLogEntry === 'function') addLogEntry('⏳ Bắt đầu xử lý batch TXT', 'info');
+
+    for (let i = 0; i < window.batchTxtData.length; i++) {
+        const item = window.batchTxtData[i];
+        updateBatchRowStatus(item.name, 'processing');
+
+        try {
+            let textToProcess = item.text || '';
+
+            // apply batch replace if function exists
+            if (typeof applyBatchReplaceToText === 'function') {
+                textToProcess = applyBatchReplaceToText(textToProcess);
+            }
+
+            const filenameBase = item.name.replace(/\.txt$/i, '').replace(/[^\w\-_. ]+/g, '_');
+
+            // Preferred direct function to generate audio and return Blob
+            let finalBlob = null;
+            if (typeof generateAudioFromText === 'function') {
+                finalBlob = await generateAudioFromText(textToProcess, filenameBase, (p)=> updateBatchRowProgress(item.name,p));
+            } else {
+                // Fallback: set textarea and trigger existing start flow; listen for 'gemini-audio-ready'
+                const textarea = document.getElementById('gemini-main-textarea');
+                const originalText = textarea ? textarea.value : '';
+                if (textarea) textarea.value = textToProcess;
+
+                let resolved = false;
+                const onReady = (ev) => {
+                    resolved = true;
+                    finalBlob = ev.detail && ev.detail.blob ? ev.detail.blob : null;
+                    window.removeEventListener('gemini-audio-ready', onReady);
+                };
+                window.addEventListener('gemini-audio-ready', onReady);
+
+                const startBtn = document.getElementById('gemini-start-queue-btn');
+                if (startBtn) startBtn.click();
+
+                const waitMs = 180000;
+                const startWait = Date.now();
+                while (!resolved && Date.now() - startWait < waitMs) {
+                    await new Promise(r => setTimeout(r, 500));
+                }
+                if (textarea) textarea.value = originalText;
+                window.removeEventListener('gemini-audio-ready', onReady);
+            }
+
+            if (finalBlob) {
+                item.blob = finalBlob;
+                item.status = 'done';
+                updateBatchRowStatus(item.name, 'done');
+
+                // auto-download
+                if (typeof autoDownload === 'function') {
+                    autoDownload(finalBlob, `${filenameBase}.mp3`);
+                } else {
+                    const objectURL = URL.createObjectURL(finalBlob);
+                    const a = document.createElement('a');
+                    a.href = objectURL;
+                    a.download = `${filenameBase}.mp3`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(()=>URL.revokeObjectURL(objectURL),2000);
+                }
+
+                if (typeof addLogEntry === 'function') addLogEntry(`✅ Đã hoàn thành và tải về: ${filenameBase}.mp3`, 'success');
+            } else {
+                item.status = 'error';
+                updateBatchRowStatus(item.name, 'error');
+                if (typeof addLogEntry === 'function') addLogEntry(`❌ Lỗi tạo audio cho ${item.name}`, 'error');
+            }
+        } catch (err) {
+            console.error('Batch item error', item.name, err);
+            item.status = 'error';
+            updateBatchRowStatus(item.name, 'error');
+            if (typeof addLogEntry === 'function') addLogEntry(`⚠️ Lỗi xử lý ${item.name}: ${err.message}`, 'warning');
+        }
+
+        await new Promise(r => setTimeout(r, 800));
+    }
+
+    if (startBatchBtn) startBatchBtn.disabled = false;
+    if (typeof addLogEntry === 'function') addLogEntry('🎉 Hoàn thành batch TXT', 'success');
+}
+
+function updateBatchRowStatus(name, statusText) {
+    try {
+        const el = document.querySelector(`.batch-status[data-name="${name}"]`);
+        if (el) {
+            el.textContent = statusText.charAt(0).toUpperCase() + statusText.slice(1);
+            if (statusText === 'done') el.style.color = '#50fa7b';
+            if (statusText === 'processing') el.style.color = '#fbbf24';
+            if (statusText === 'error') el.style.color = '#ff6b6b';
+        }
+    } catch(e){console.warn(e)}
+}
+function updateBatchRowProgress(name,p){
+    try {
+        const el = document.querySelector(`.batch-status[data-name="${name}"]`);
+        if (el) el.textContent = `Processing ${Math.round(p)}%`;
+    } catch(e){}
+}
+
+
+
+
             // Format file size
             function formatFileSize(bytes) {
                 if (bytes === 0) return '0 Bytes';
@@ -5288,7 +5347,18 @@ async function waitForVoiceModelReady() {
     const playPauseWaveformBtn = document.getElementById('waveform-play-pause');
 
     if (startBtn) {
-        startBtn.addEventListener('click', () => {
+        
+startBtn.addEventListener('click', async () => {
+        // If batch TXT loaded, run batch flow first (image UI behavior)
+        if (window.batchTxtData && window.batchTxtData.length) {
+            // disable button visual and run batch
+            if (startBtn) startBtn.style.display = 'none';
+            await processBatchTxtQueue();
+            // restore start button
+            if (startBtn) startBtn.style.display = 'inline-block';
+            return;
+        }
+
             let text = mainTextarea.value.trim();
             
             // ⭐ THÊM MỚI: Tự động sửa "ai" → "Ai" và "im" → "Im" cho Tiếng Việt
