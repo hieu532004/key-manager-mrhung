@@ -96,7 +96,6 @@ export default function LoginPage() {
           <p>Gợi ý (test nhanh):</p>
           <p>
             <code className="px-2 py-1 rounded bg-slate-800 border border-slate-700">
-              user: admin &nbsp;|&nbsp; pass: 123456
             </code>
           </p>
         </div>
