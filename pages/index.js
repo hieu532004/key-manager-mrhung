@@ -476,7 +476,7 @@ export default function Home() {
             )}
           </div>
 
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5">
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-4 sm:p-5">
             <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h2 className="text-lg font-black">Danh sach license</h2>
@@ -521,26 +521,103 @@ export default function Home() {
               </div>
             )}
 
-            <div className="overflow-auto rounded-2xl border border-slate-800">
-              <table className="w-full min-w-[1120px] table-fixed text-left text-sm">
+            <div className="space-y-3 md:hidden">
+              {!items.length && (
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/40 px-4 py-8 text-center text-sm text-slate-500">
+                  {loading ? "Dang tai..." : "Chua co license nao."}
+                </div>
+              )}
+              {pagedItems.map((item) => (
+                <div
+                  key={item.keyHash || item.licenseKey}
+                  className="rounded-2xl border border-slate-800 bg-slate-950/40 p-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-mono text-[11px] font-bold text-cyan-100">
+                        {item.licenseKey}
+                      </p>
+                      <p className="mt-1 truncate font-mono text-[11px] text-slate-400">
+                        {item.machineId || "Chua bind"}
+                      </p>
+                    </div>
+                    <span
+                      className={`inline-flex shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-black ${statusClass(item)}`}
+                    >
+                      {item.active ? "Active" : item.status}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+                    <div className="rounded-xl bg-slate-900/70 px-2.5 py-2">
+                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Het han</p>
+                      <p className="mt-1 font-semibold text-slate-100">
+                        {item.expiration || "No limit"}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-slate-900/70 px-2.5 py-2">
+                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Owner</p>
+                      <p className="mt-1 truncate font-semibold text-slate-100">
+                        {item.ownerName || "-"}
+                      </p>
+                    </div>
+                    <div className="col-span-2 rounded-xl bg-slate-900/70 px-2.5 py-2">
+                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Phone</p>
+                      <p className="mt-1 truncate font-semibold text-slate-100">
+                        {item.ownerPhone || "-"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard?.writeText(item.licenseKey)}
+                      className="rounded-xl border border-slate-700 px-3 py-1.5 text-[11px] font-bold text-slate-200 hover:bg-slate-800"
+                    >
+                      Copy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => editItem(item)}
+                      className="rounded-xl bg-cyan-500 px-3 py-1.5 text-[11px] font-bold text-slate-950 hover:bg-cyan-400"
+                    >
+                      Sua
+                    </button>
+                    {!isSupport && (
+                      <button
+                        type="button"
+                        onClick={() => deleteItem(item)}
+                        className="rounded-xl bg-red-500 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-red-400"
+                      >
+                        Xoa
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden overflow-auto rounded-2xl border border-slate-800 md:block">
+              <table className="w-full min-w-[980px] table-fixed text-left text-xs">
                 <colgroup>
-                  <col className="w-[140px]" />
-                  <col className="w-[260px]" />
-                  <col className="w-[110px]" />
-                  <col className="w-[190px]" />
-                  <col className="w-[140px]" />
-                  <col className="w-[110px]" />
+                  <col className="w-[130px]" />
+                  <col className="w-[220px]" />
+                  <col className="w-[100px]" />
                   <col className="w-[170px]" />
+                  <col className="w-[130px]" />
+                  <col className="w-[100px]" />
+                  <col className="w-[150px]" />
                 </colgroup>
-                <thead className="bg-slate-950 text-xs uppercase tracking-wide text-slate-400">
+                <thead className="bg-slate-950 text-[11px] uppercase tracking-wide text-slate-400">
                   <tr>
-                    <th className="px-4 py-3">License Key</th>
-                    <th className="px-4 py-3">Machine ID</th>
-                    <th className="px-4 py-3">Expiration</th>
-                    <th className="px-4 py-3">Owner</th>
-                    <th className="px-4 py-3">Phone</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Action</th>
+                    <th className="px-3 py-2.5">License Key</th>
+                    <th className="px-3 py-2.5">Machine ID</th>
+                    <th className="px-3 py-2.5">Expiration</th>
+                    <th className="px-3 py-2.5">Owner</th>
+                    <th className="px-3 py-2.5">Phone</th>
+                    <th className="px-3 py-2.5">Status</th>
+                    <th className="px-3 py-2.5 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
@@ -553,53 +630,53 @@ export default function Home() {
                   )}
                   {pagedItems.map((item) => (
                     <tr key={item.keyHash || item.licenseKey} className="align-top">
-                      <td className="px-4 py-3 font-mono text-xs text-cyan-100">
+                      <td className="px-3 py-2.5 font-mono text-[11px] text-cyan-100">
                         <span className="block truncate" title={item.licenseKey}>
                           {item.licenseKey}
                         </span>
                       </td>
-                      <td className="max-w-[260px] px-4 py-3 font-mono text-xs text-slate-300">
+                      <td className="max-w-[220px] px-3 py-2.5 font-mono text-[11px] text-slate-300">
                         <span className="block truncate" title={item.machineId}>
                           {item.machineId || "Chua bind"}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2.5">
                         <span
-                          className={`inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold ${statusClass(item)}`}
+                          className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-bold ${statusClass(item)}`}
                         >
                           {item.expiration || "No limit"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-200">
+                      <td className="px-3 py-2.5 text-[11px] text-slate-200">
                         <span className="block truncate" title={item.ownerName || ""}>
                           {item.ownerName}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-3 py-2.5 text-[11px] text-slate-300">
                         <span className="block truncate" title={item.ownerPhone || ""}>
                           {item.ownerPhone}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2.5">
                         <span
-                          className={`inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black ${statusClass(item)}`}
+                          className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-black ${statusClass(item)}`}
                         >
                           {item.active ? "Active" : item.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-2 whitespace-nowrap">
+                      <td className="px-3 py-2.5">
+                        <div className="flex justify-end gap-1.5 whitespace-nowrap">
                           <button
                             type="button"
                             onClick={() => navigator.clipboard?.writeText(item.licenseKey)}
-                            className="rounded-xl border border-slate-700 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-800"
+                            className="rounded-xl border border-slate-700 px-2.5 py-1.5 text-[11px] font-bold text-slate-200 hover:bg-slate-800"
                           >
                             Copy
                           </button>
                           <button
                             type="button"
                             onClick={() => editItem(item)}
-                            className="rounded-xl bg-cyan-500 px-3 py-1.5 text-xs font-bold text-slate-950 hover:bg-cyan-400"
+                            className="rounded-xl bg-cyan-500 px-2.5 py-1.5 text-[11px] font-bold text-slate-950 hover:bg-cyan-400"
                           >
                             Sua
                           </button>
@@ -607,7 +684,7 @@ export default function Home() {
                             <button
                               type="button"
                               onClick={() => deleteItem(item)}
-                              className="rounded-xl bg-red-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-400"
+                              className="rounded-xl bg-red-500 px-2.5 py-1.5 text-[11px] font-bold text-white hover:bg-red-400"
                             >
                               Xoa
                             </button>
@@ -622,15 +699,15 @@ export default function Home() {
 
             {items.length > PAGE_SIZE && (
               <div className="mt-4 flex flex-col gap-3 border-t border-slate-800 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs text-slate-400">
+                <p className="text-[11px] text-slate-400">
                   Trang {page}/{totalPages} - Hien {rangeStart}-{rangeEnd} / {items.length}
                 </p>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                     disabled={page === 1}
-                    className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded-xl border border-slate-700 px-2.5 py-1.5 text-[11px] font-bold text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Truoc
                   </button>
@@ -639,7 +716,7 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => setPage(1)}
-                        className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800"
+                        className="rounded-xl border border-slate-700 px-2.5 py-1.5 text-[11px] font-bold text-slate-200 hover:bg-slate-800"
                       >
                         1
                       </button>
@@ -653,8 +730,8 @@ export default function Home() {
                       onClick={() => setPage(pageNumber)}
                       className={
                         pageNumber === page
-                          ? "rounded-xl bg-cyan-400 px-3 py-2 text-xs font-bold text-slate-950"
-                          : "rounded-xl border border-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800"
+                          ? "rounded-xl bg-cyan-400 px-2.5 py-1.5 text-[11px] font-bold text-slate-950"
+                          : "rounded-xl border border-slate-700 px-2.5 py-1.5 text-[11px] font-bold text-slate-200 hover:bg-slate-800"
                       }
                     >
                       {pageNumber}
@@ -668,7 +745,7 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => setPage(totalPages)}
-                        className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800"
+                        className="rounded-xl border border-slate-700 px-2.5 py-1.5 text-[11px] font-bold text-slate-200 hover:bg-slate-800"
                       >
                         {totalPages}
                       </button>
@@ -678,7 +755,7 @@ export default function Home() {
                     type="button"
                     onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
                     disabled={page === totalPages}
-                    className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded-xl border border-slate-700 px-2.5 py-1.5 text-[11px] font-bold text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Sau
                   </button>
