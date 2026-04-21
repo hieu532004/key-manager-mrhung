@@ -259,7 +259,7 @@ export default function Home() {
           </div>
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={loadItems}
+              onClick={() => loadItems(query)}
               disabled={loading}
               className="rounded-2xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-bold text-slate-100 hover:bg-slate-700 disabled:opacity-60"
             >
@@ -581,3 +581,4 @@ export default function Home() {
     </main>
   );
 }
+
