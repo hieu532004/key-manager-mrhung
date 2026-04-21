@@ -38,7 +38,7 @@ export default async function handler(req, res) {
   }
 
   const { licenseKey, machineId, appVersion = "", nonce = "", timestamp = 0 } = req.body || {};
-  const update = evaluateClientVersion(appVersion);
+  const update = await evaluateClientVersion(appVersion);
 
   const cleanKey = normalizeLicenseKey(licenseKey);
   const cleanMachine = String(machineId || "").trim();

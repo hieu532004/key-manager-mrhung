@@ -10,6 +10,13 @@ const emptyForm = {
   status: "Active",
 };
 
+const emptyPolicyForm = {
+  latestVersion: "",
+  minimumVersion: "",
+  downloadUrl: "",
+  releaseNotes: "",
+};
+
 const PAGE_SIZE = 20;
 
 function dateInputValue(dt) {
@@ -55,8 +62,14 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [policyForm, setPolicyForm] = useState(emptyPolicyForm);
+  const [policyMeta, setPolicyMeta] = useState(null);
+  const [policyLoading, setPolicyLoading] = useState(false);
+  const [policyError, setPolicyError] = useState("");
+  const [policyNotice, setPolicyNotice] = useState("");
 
   const isSupport = session?.role === "support";
+  const canEditPolicy = session?.role === "admin";
   const supportMaxExpiration = plusDays(10);
 
   const stats = useMemo(() => {
@@ -130,6 +143,33 @@ export default function Home() {
     }
   };
 
+  const loadToolPolicy = async () => {
+    setPolicyLoading(true);
+    setPolicyError("");
+    setPolicyNotice("");
+    try {
+      const res = await fetch("/api/tool-policy", {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Khong tai duoc cau hinh update");
+      const item = data.item || {};
+      setPolicyMeta(item);
+      setPolicyForm({
+        latestVersion: String(item.latestVersion || ""),
+        minimumVersion: String(item.minimumVersion || ""),
+        downloadUrl: String(item.downloadUrl || ""),
+        releaseNotes: String(item.releaseNotes || ""),
+      });
+    } catch (err) {
+      setPolicyError(err.message || "Khong tai duoc cau hinh update");
+    } finally {
+      setPolicyLoading(false);
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
 
@@ -140,6 +180,9 @@ export default function Home() {
         const ok = await checkSession();
         if (!ok || cancelled) return;
         await loadItems("");
+        if (!cancelled) {
+          await loadToolPolicy();
+        }
       } catch (err) {
         if (!cancelled) {
           setError(err.message || "Khong tai duoc du lieu");
@@ -184,6 +227,42 @@ export default function Home() {
   const resetForm = () => {
     setEditingKey("");
     setForm({ ...emptyForm, expiration: defaultExpirationForRole(session?.role) });
+  };
+
+  const updatePolicyForm = (event) => {
+    const { name, value } = event.target;
+    setPolicyNotice("");
+    setPolicyForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const submitToolPolicy = async (event) => {
+    event.preventDefault();
+    setPolicyError("");
+    setPolicyNotice("");
+    try {
+      setPolicyLoading(true);
+      const res = await fetch("/api/tool-policy", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(policyForm),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Khong luu duoc cau hinh update");
+      setPolicyMeta(data.item || null);
+      setPolicyNotice("Da luu cau hinh thong bao/cap nhat tool");
+      if (data.item) {
+        setPolicyForm({
+          latestVersion: String(data.item.latestVersion || ""),
+          minimumVersion: String(data.item.minimumVersion || ""),
+          downloadUrl: String(data.item.downloadUrl || ""),
+          releaseNotes: String(data.item.releaseNotes || ""),
+        });
+      }
+    } catch (err) {
+      setPolicyError(err.message || "Khong luu duoc cau hinh update");
+    } finally {
+      setPolicyLoading(false);
+    }
   };
 
   const submitForm = async (event) => {
@@ -474,6 +553,126 @@ export default function Home() {
                 </button>
               </div>
             )}
+
+            <form
+              onSubmit={submitToolPolicy}
+              className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5"
+            >
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-black">Thong bao / cap nhat tool</h2>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Web chi luu metadata update. File cai dat hay file zip nen dat
+                    o GitHub Releases, Cloudflare R2, S3 hoac storage ngoai - khong
+                    luu trong MongoDB.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={loadToolPolicy}
+                  disabled={policyLoading}
+                  className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800 disabled:opacity-60"
+                >
+                  Reload policy
+                </button>
+              </div>
+
+              {(policyError || policyNotice) && (
+                <div className="mb-4 space-y-2">
+                  {policyError && (
+                    <div className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                      {policyError}
+                    </div>
+                  )}
+                  {policyNotice && (
+                    <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+                      {policyNotice}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="text-xs font-bold text-slate-300">Latest Version</span>
+                    <input
+                      name="latestVersion"
+                      value={policyForm.latestVersion}
+                      onChange={updatePolicyForm}
+                      disabled={!canEditPolicy}
+                      placeholder="VD: V2.3.3"
+                      className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-cyan-400 disabled:opacity-60"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-xs font-bold text-slate-300">Minimum Version</span>
+                    <input
+                      name="minimumVersion"
+                      value={policyForm.minimumVersion}
+                      onChange={updatePolicyForm}
+                      disabled={!canEditPolicy}
+                      placeholder="Version toi thieu duoc chay"
+                      className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-cyan-400 disabled:opacity-60"
+                    />
+                  </label>
+                </div>
+
+                <label className="block">
+                  <span className="text-xs font-bold text-slate-300">Download URL</span>
+                  <input
+                    name="downloadUrl"
+                    value={policyForm.downloadUrl}
+                    onChange={updatePolicyForm}
+                    disabled={!canEditPolicy}
+                    placeholder="Link file update truc tiep hoac trang release"
+                    className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-cyan-400 disabled:opacity-60"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="text-xs font-bold text-slate-300">Release Notes</span>
+                  <textarea
+                    name="releaseNotes"
+                    value={policyForm.releaseNotes}
+                    onChange={updatePolicyForm}
+                    disabled={!canEditPolicy}
+                    rows={6}
+                    placeholder="Noi dung hien ra trong popup update cua tool"
+                    className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-cyan-400 disabled:opacity-60"
+                  />
+                </label>
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-xs text-slate-400">
+                <p>
+                  Tool se nhan thong tin nay qua API license. Neu version hien tai
+                  nho hon <span className="font-bold text-slate-200">Minimum Version</span>,
+                  tool se bi chan va bat buoc cap nhat.
+                </p>
+                <p className="mt-2">
+                  Nguon cau hinh hien tai:{" "}
+                  <span className="font-bold text-slate-200">
+                    {policyMeta?.source || "env"}
+                  </span>
+                  {policyMeta?.updatedAt ? ` | Cap nhat luc ${policyMeta.updatedAt}` : ""}
+                </p>
+              </div>
+
+              {canEditPolicy ? (
+                <button
+                  type="submit"
+                  disabled={policyLoading}
+                  className="mt-5 w-full rounded-2xl bg-fuchsia-400 px-4 py-3 text-sm font-black text-slate-950 hover:bg-fuchsia-300 disabled:opacity-60"
+                >
+                  Luu cau hinh update
+                </button>
+              ) : (
+                <div className="mt-5 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-100">
+                  Tai khoan support chi xem duoc cau hinh update, khong duoc sua.
+                </div>
+              )}
+            </form>
           </div>
 
           <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-4 sm:p-5">

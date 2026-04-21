@@ -52,7 +52,7 @@ export default async function handler(req, res) {
     return fail(res, 401, err.message || "Invalid license session");
   }
 
-  const update = evaluateClientVersion(session.appVersion || "");
+  const update = await evaluateClientVersion(session.appVersion || "");
   if (update.required) {
     return fail(
       res,
