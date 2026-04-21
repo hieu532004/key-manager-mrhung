@@ -10,6 +10,8 @@ const emptyForm = {
   status: "Active",
 };
 
+const PAGE_SIZE = 20;
+
 function dateInputValue(dt) {
   const year = dt.getFullYear();
   const month = String(dt.getMonth() + 1).padStart(2, "0");
@@ -49,17 +51,44 @@ export default function Home() {
   const [editingKey, setEditingKey] = useState("");
   const [importText, setImportText] = useState("");
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+
   const isSupport = session?.role === "support";
   const supportMaxExpiration = plusDays(10);
 
   const stats = useMemo(() => {
     const active = items.filter((item) => item.active).length;
     const expired = items.filter((item) => item.expired || item.status === "Expired").length;
-    return { total: items.length, active, expired, inactive: items.length - active - expired };
+    return {
+      total: items.length,
+      active,
+      expired,
+      inactive: items.length - active - expired,
+    };
   }, [items]);
+
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(items.length / PAGE_SIZE)), [items.length]);
+
+  const pagedItems = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return items.slice(start, start + PAGE_SIZE);
+  }, [items, page]);
+
+  const visiblePages = useMemo(() => {
+    const pages = [];
+    const start = Math.max(1, page - 2);
+    const end = Math.min(totalPages, page + 2);
+    for (let current = start; current <= end; current += 1) {
+      pages.push(current);
+    }
+    return pages;
+  }, [page, totalPages]);
+
+  const rangeStart = items.length ? (page - 1) * PAGE_SIZE + 1 : 0;
+  const rangeEnd = items.length ? Math.min(items.length, page * PAGE_SIZE) : 0;
 
   const checkSession = async () => {
     const res = await fetch("/api/auth/me", {
@@ -83,7 +112,8 @@ export default function Home() {
     setLoading(true);
     setError("");
     try {
-      const suffix = rawQuery.trim() ? `?q=${encodeURIComponent(rawQuery.trim())}` : "";
+      const normalizedQuery = String(rawQuery || "").trim();
+      const suffix = normalizedQuery ? `?q=${encodeURIComponent(normalizedQuery)}` : "";
       const res = await fetch(`/api/keys${suffix}`, {
         method: "GET",
         credentials: "same-origin",
@@ -92,6 +122,7 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Khong tai duoc license");
       setItems(Array.isArray(data.items) ? data.items : []);
+      setPage(1);
     } catch (err) {
       setError(err.message || "Khong tai duoc du lieu");
     } finally {
@@ -128,6 +159,12 @@ export default function Home() {
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   useEffect(() => {
     if (session?.role === "support" && !editingKey) {
@@ -428,6 +465,7 @@ export default function Home() {
                   placeholder={"License Key\tMachine ID\tExpiration\tOwner Name\tOwner Phone\tStatus"}
                 />
                 <button
+                  type="button"
                   onClick={importRows}
                   disabled={loading}
                   className="mt-3 w-full rounded-2xl border border-amber-400/40 bg-amber-400 px-4 py-3 text-sm font-black text-slate-950 hover:bg-amber-300 disabled:opacity-60"
@@ -445,11 +483,14 @@ export default function Home() {
                 <p className="text-xs text-slate-400">
                   Het han se tu do va active = off khi server reload/check.
                 </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Hien {rangeStart}-{rangeEnd} / {items.length} license
+                </p>
               </div>
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
-                  loadItems();
+                  loadItems(query);
                 }}
                 className="flex gap-2 lg:min-w-[360px]"
               >
@@ -481,7 +522,7 @@ export default function Home() {
             )}
 
             <div className="overflow-auto rounded-2xl border border-slate-800">
-              <table className="min-w-[1120px] w-full table-fixed text-left text-sm">
+              <table className="w-full min-w-[1120px] table-fixed text-left text-sm">
                 <colgroup>
                   <col className="w-[140px]" />
                   <col className="w-[260px]" />
@@ -510,7 +551,7 @@ export default function Home() {
                       </td>
                     </tr>
                   )}
-                  {items.map((item) => (
+                  {pagedItems.map((item) => (
                     <tr key={item.keyHash || item.licenseKey} className="align-top">
                       <td className="px-4 py-3 font-mono text-xs text-cyan-100">
                         <span className="block truncate" title={item.licenseKey}>
@@ -549,12 +590,14 @@ export default function Home() {
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2 whitespace-nowrap">
                           <button
+                            type="button"
                             onClick={() => navigator.clipboard?.writeText(item.licenseKey)}
                             className="rounded-xl border border-slate-700 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-800"
                           >
                             Copy
                           </button>
                           <button
+                            type="button"
                             onClick={() => editItem(item)}
                             className="rounded-xl bg-cyan-500 px-3 py-1.5 text-xs font-bold text-slate-950 hover:bg-cyan-400"
                           >
@@ -562,6 +605,7 @@ export default function Home() {
                           </button>
                           {!isSupport && (
                             <button
+                              type="button"
                               onClick={() => deleteItem(item)}
                               className="rounded-xl bg-red-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-400"
                             >
@@ -575,10 +619,75 @@ export default function Home() {
                 </tbody>
               </table>
             </div>
+
+            {items.length > PAGE_SIZE && (
+              <div className="mt-4 flex flex-col gap-3 border-t border-slate-800 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-slate-400">
+                  Trang {page}/{totalPages} - Hien {rangeStart}-{rangeEnd} / {items.length}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                    disabled={page === 1}
+                    className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Truoc
+                  </button>
+                  {visiblePages[0] > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setPage(1)}
+                        className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800"
+                      >
+                        1
+                      </button>
+                      {visiblePages[0] > 2 && <span className="px-1 text-slate-500">...</span>}
+                    </>
+                  )}
+                  {visiblePages.map((pageNumber) => (
+                    <button
+                      key={pageNumber}
+                      type="button"
+                      onClick={() => setPage(pageNumber)}
+                      className={
+                        pageNumber === page
+                          ? "rounded-xl bg-cyan-400 px-3 py-2 text-xs font-bold text-slate-950"
+                          : "rounded-xl border border-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800"
+                      }
+                    >
+                      {pageNumber}
+                    </button>
+                  ))}
+                  {visiblePages[visiblePages.length - 1] < totalPages && (
+                    <>
+                      {visiblePages[visiblePages.length - 1] < totalPages - 1 && (
+                        <span className="px-1 text-slate-500">...</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setPage(totalPages)}
+                        className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800"
+                      >
+                        {totalPages}
+                      </button>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                    disabled={page === totalPages}
+                    className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Sau
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </section>
       </div>
     </main>
   );
 }
-
