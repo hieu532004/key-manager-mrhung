@@ -7,6 +7,7 @@ import {
   signToken,
   verifyToken,
 } from "../../../lib/security";
+import { evaluateClientVersion } from "../../../lib/tool-policy";
 
 const PERMIT_TTL_SECONDS = Number(process.env.RUN_PERMIT_TTL_SECONDS || 120);
 
@@ -15,12 +16,13 @@ async function getCollection() {
   return client.db(DB_NAME).collection(COLLECTION_NAME);
 }
 
-function fail(res, status, message) {
+function fail(res, status, message, extra = {}) {
   const payload = {
     ok: false,
     allowed: false,
     error: message,
     serverTime: new Date().toISOString(),
+    ...extra,
   };
   return res.status(status).json({
     ...payload,
@@ -40,6 +42,7 @@ export default async function handler(req, res) {
     stage = "workflow",
     nonce = "",
     metadata = {},
+    timestamp = 0,
   } = req.body || {};
 
   let session;
@@ -49,14 +52,40 @@ export default async function handler(req, res) {
     return fail(res, 401, err.message || "Invalid license session");
   }
 
+  const update = evaluateClientVersion(session.appVersion || "");
+  if (update.required) {
+    return fail(
+      res,
+      426,
+      `Tool version ${String(session.appVersion || "unknown").trim() || "unknown"} is no longer supported`,
+      { update }
+    );
+  }
+
   const cleanMachine = String(machineId || "").trim();
   if (!cleanMachine || cleanMachine !== session.machineId) {
-    return fail(res, 403, "MachineId mismatch");
+    return fail(res, 403, "MachineId mismatch", { update });
+  }
+
+  const cleanStage = String(stage || "workflow").trim().slice(0, 80) || "workflow";
+  if (!/^[a-z0-9:_-]+$/i.test(cleanStage)) {
+    return fail(res, 400, "Stage format is invalid", { update });
+  }
+
+  const clientTs = Number(timestamp || 0);
+  const nowMs = Date.now();
+  if (clientTs && Math.abs(nowMs - clientTs * 1000) > 5 * 60 * 1000) {
+    return fail(res, 400, "Clock drift too large", { update });
+  }
+
+  const cleanNonce = String(nonce || "").trim();
+  if (cleanNonce.length < 16) {
+    return fail(res, 400, "Nonce is missing or too short", { update });
   }
 
   const collection = await getCollection();
   const doc = await collection.findOne({ keyHash: session.keyHash });
-  if (!doc) return fail(res, 404, "License not found");
+  if (!doc) return fail(res, 404, "License not found", { update });
 
   const state = effectiveLicenseState(doc);
   if (!state.active) {
@@ -68,11 +97,11 @@ export default async function handler(req, res) {
           active: false,
           updatedAt: new Date(),
           lastPermitDeniedAt: new Date(),
-          lastPermitStage: String(stage || ""),
+          lastPermitStage: cleanStage,
         },
       }
     );
-    return fail(res, 403, state.expired ? "License expired" : "License inactive");
+    return fail(res, 403, state.expired ? "License expired" : "License inactive", { update });
   }
 
   const permit = signToken(
@@ -81,7 +110,7 @@ export default async function handler(req, res) {
       keyHash: session.keyHash,
       machineId: cleanMachine,
       stage: String(stage || "workflow").slice(0, 80),
-      nonce: String(nonce || ""),
+      nonce: cleanNonce,
     },
     PERMIT_TTL_SECONDS
   );
@@ -91,8 +120,9 @@ export default async function handler(req, res) {
     {
       $set: {
         lastPermitAt: new Date(),
-        lastPermitStage: String(stage || ""),
+        lastPermitStage: cleanStage,
         lastPermitMetadata: JSON.stringify(metadata || {}).slice(0, 1200),
+        lastPermitNonce: cleanNonce,
       },
       $inc: { permitCount: 1 },
     }
@@ -101,11 +131,12 @@ export default async function handler(req, res) {
   const payload = {
     ok: true,
     allowed: true,
-    stage: String(stage || "workflow"),
+    stage: cleanStage,
     permit,
     expiresAt: Math.floor(Date.now() / 1000) + PERMIT_TTL_SECONDS,
     ttlSeconds: PERMIT_TTL_SECONDS,
     serverTime: new Date().toISOString(),
+    update,
   };
 
   return res.status(200).json({

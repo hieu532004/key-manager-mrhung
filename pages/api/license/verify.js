@@ -8,6 +8,7 @@ import {
   signResponse,
   signToken,
 } from "../../../lib/security";
+import { evaluateClientVersion } from "../../../lib/tool-policy";
 
 const SESSION_TTL_SECONDS = Number(process.env.RUN_SESSION_TTL_SECONDS || 900);
 
@@ -36,31 +37,38 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
   }
 
-  const {
-    licenseKey,
-    machineId,
-    appVersion = "",
-    nonce = "",
-    timestamp = 0,
-  } = req.body || {};
+  const { licenseKey, machineId, appVersion = "", nonce = "", timestamp = 0 } = req.body || {};
+  const update = evaluateClientVersion(appVersion);
 
   const cleanKey = normalizeLicenseKey(licenseKey);
   const cleanMachine = String(machineId || "").trim();
   if (!cleanKey || !cleanMachine) {
-    return fail(res, 400, "Missing licenseKey or machineId");
+    return fail(res, 400, "Missing licenseKey or machineId", { update });
   }
 
   const clientTs = Number(timestamp || 0);
   const nowMs = Date.now();
   if (clientTs && Math.abs(nowMs - clientTs * 1000) > 5 * 60 * 1000) {
-    return fail(res, 400, "Clock drift too large");
+    return fail(res, 400, "Clock drift too large", { update });
+  }
+  if (String(nonce || "").trim().length < 16) {
+    return fail(res, 400, "Nonce is missing or too short", { update });
+  }
+
+  if (update.required) {
+    return fail(
+      res,
+      426,
+      `Tool version ${String(appVersion || "unknown").trim() || "unknown"} is no longer supported`,
+      { update }
+    );
   }
 
   const collection = await getCollection();
   const keyHash = licenseKeyHash(cleanKey);
   const doc = await collection.findOne({ keyHash });
   if (!doc) {
-    return fail(res, 404, "License key does not exist");
+    return fail(res, 404, "License key does not exist", { update });
   }
 
   const state = effectiveLicenseState(doc);
@@ -80,6 +88,7 @@ export default async function handler(req, res) {
     return fail(res, 403, state.expired ? "License expired" : "License inactive", {
       status: state.statusText,
       expiration: state.expiration,
+      update,
     });
   }
 
@@ -96,17 +105,16 @@ export default async function handler(req, res) {
         $inc: { checkCount: 1 },
       }
     );
-    return fail(res, 403, "License is already bound to another machine");
+    return fail(res, 403, "License is already bound to another machine", { update });
   }
 
-  const bindUpdate = currentMachineId
-    ? {}
-    : autoBind
-      ? { machineId: cleanMachine }
-      : {};
+  const bindUpdate = currentMachineId ? {} : autoBind ? { machineId: cleanMachine } : {};
 
   if (!currentMachineId && !autoBind) {
-    return fail(res, 403, "License has no machineId yet", { machineId: cleanMachine });
+    return fail(res, 403, "License has no machineId yet", {
+      machineId: cleanMachine,
+      update,
+    });
   }
 
   const sessionToken = signToken(
@@ -157,6 +165,7 @@ export default async function handler(req, res) {
       name: doc.ownerName || "",
       sdt: doc.ownerPhone || "",
     },
+    update,
   };
 
   return res.status(200).json({
