@@ -1,105 +1,130 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { ACCOUNTS } from "../lib/accounts";
+
+async function readJsonSafe(res) {
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch (_) {
+    return { error: text };
+  }
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
   const [error, setError] = useState("");
 
-  // Nếu đã đăng nhập rồi thì tự chuyển về trang chủ
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const logged = window.localStorage.getItem("mmx_logged_in") === "1";
-    if (logged) {
-      router.replace("/");
-    }
+    let cancelled = false;
+
+    const checkSession = async () => {
+      try {
+        const res = await fetch("/api/auth/me", {
+          method: "GET",
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+        if (!cancelled && res.ok) {
+          router.replace("/");
+          return;
+        }
+      } catch (_) {
+        if (!cancelled) {
+          setError(
+            "Khong ket noi duoc license server. Hay kiem tra server local hoac deploy Vercel."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setChecking(false);
+        }
+      }
+    };
+
+    checkSession();
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const submit = async (event) => {
+    event.preventDefault();
     setError("");
-
-    const found = ACCOUNTS.find(
-      (acc) =>
-        acc.username.trim().toLowerCase() === username.trim().toLowerCase() &&
-        acc.password === password
-    );
-
-    if (!found) {
-      setError("Sai tài khoản hoặc mật khẩu");
-      return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await readJsonSafe(res);
+      if (!res.ok) throw new Error(data.error || "Dang nhap that bai");
+      router.replace("/");
+    } catch (err) {
+      const message = String(err?.message || "");
+      if (message.includes("Failed to fetch")) {
+        setError("Khong the ket noi toi license server. Hay bat server truoc khi dang nhap.");
+      } else {
+        setError(message || "Dang nhap that bai");
+      }
+    } finally {
+      setLoading(false);
     }
-
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("mmx_logged_in", "1");
-      window.localStorage.setItem("mmx_username", found.username);
-    }
-
-    router.replace("/");
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-50 px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl">
-        <h1 className="text-xl font-semibold mb-1 text-center">
-          Đăng nhập quản lý KEY
-        </h1>
-        <p className="text-xs text-slate-400 mb-4 text-center">
-          Vui lòng nhập tài khoản nội bộ để truy cập trang quản lý KEY.
+    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-slate-100">
+      <section className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900/80 p-7 shadow-2xl shadow-black/30">
+        <p className="text-center text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">
+          Veo3 Grok
+        </p>
+        <h1 className="mt-2 text-center text-3xl font-black">License Admin</h1>
+        <p className="mt-2 text-center text-sm text-slate-400">
+          Dang nhap bang tai khoan admin hoac support server-side. Cookie duoc luu httpOnly.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
-            <label className="block text-sm mb-1 text-slate-300">
-              Tên đăng nhập
-            </label>
+        <form onSubmit={submit} className="mt-7 space-y-4">
+          <label className="block">
+            <span className="text-xs font-bold text-slate-300">Username</span>
             <input
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-emerald-400"
-              placeholder="admin"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
+              className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-cyan-400"
             />
-          </div>
-
-          <div>
-            <label className="block text-sm mb-1 text-slate-300">
-              Mật khẩu
-            </label>
+          </label>
+          <label className="block">
+            <span className="text-xs font-bold text-slate-300">Password</span>
             <input
               type="password"
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-emerald-400"
-              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
+              className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-cyan-400"
             />
-          </div>
+          </label>
 
           {error && (
-            <p className="text-xs text-red-400 bg-red-950/40 border border-red-900/60 rounded-lg px-3 py-2">
+            <div className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-100">
               {error}
-            </p>
+            </div>
           )}
 
           <button
             type="submit"
-            className="w-full rounded-full bg-emerald-400 text-slate-950 text-sm font-semibold py-2.5 hover:bg-emerald-300 active:scale-[0.99] transition"
+            disabled={loading || checking}
+            className="w-full rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-black text-slate-950 hover:bg-cyan-300 disabled:opacity-60"
           >
-            Đăng nhập
+            {checking ? "Dang ket noi server..." : loading ? "Dang kiem tra..." : "Dang nhap"}
           </button>
         </form>
-
-        <div className="mt-4 text-[11px] text-slate-500 space-y-1">
-          <p>Gợi ý (test nhanh):</p>
-          <p>
-            <code className="px-2 py-1 rounded bg-slate-800 border border-slate-700">
-            </code>
-          </p>
-        </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

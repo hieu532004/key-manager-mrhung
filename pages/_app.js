@@ -7,49 +7,67 @@ const PUBLIC_PATHS = ["/login", "/_error"];
 export default function MyApp({ Component, pageProps }) {
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
-    const checkAuth = (url) => {
-      const path = url.split("?")[0];
+    let cancelled = false;
 
-      // Trang public (login) thì không check
+    const checkAuth = async (url) => {
+      const path = String(url || "").split("?")[0];
+
       if (PUBLIC_PATHS.includes(path)) {
-        setAuthorized(true);
+        if (!cancelled) {
+          setAuthorized(true);
+          setCheckingAuth(false);
+        }
         return;
       }
 
-      if (typeof window === "undefined") {
-        setAuthorized(false);
-        return;
+      if (!cancelled) {
+        setCheckingAuth(true);
       }
 
-      const logged = window.localStorage.getItem("mmx_logged_in") === "1";
+      try {
+        const res = await fetch("/api/auth/me", {
+          method: "GET",
+          credentials: "same-origin",
+          cache: "no-store",
+        });
 
-      if (!logged) {
+        if (!cancelled && res.ok) {
+          setAuthorized(true);
+          setCheckingAuth(false);
+          return;
+        }
+      } catch (_) {
+        // Redirect below handles unreachable auth server too.
+      }
+
+      if (!cancelled) {
         setAuthorized(false);
+        setCheckingAuth(false);
         router.replace("/login");
-      } else {
-        setAuthorized(true);
       }
     };
 
-    // Check lần đầu khi load
     checkAuth(router.pathname);
-
-    // Check mỗi lần đổi route
     router.events.on("routeChangeComplete", checkAuth);
     return () => {
+      cancelled = true;
       router.events.off("routeChangeComplete", checkAuth);
     };
   }, [router]);
 
-  if (!authorized) {
-    // Có thể hiển thị màn hình loading nhỏ
+  if (checkingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-50">
-        <div className="text-sm text-slate-400">Đang kiểm tra đăng nhập...</div>
+        <div className="text-sm text-slate-400">Dang kiem tra dang nhap...</div>
       </div>
     );
+  }
+
+  if (!authorized) {
+    return null;
   }
 
   return <Component {...pageProps} />;
