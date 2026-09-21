@@ -10,11 +10,22 @@ const emptyForm = {
   status: "Active",
 };
 
+const emptyCampaign = {
+  enabled: true,
+  theme: "mid_autumn",
+  badge: "TRUNG THU SALE",
+  message: "Mừng Trung Thu • Gói 6 tháng giảm 5% • Gói 1 năm giảm 10% • Ưu đãi có hạn",
+  ctaLabel: "Xem ưu đãi",
+  startAt: "",
+  endAt: "",
+};
+
 const emptyToolPolicy = {
   latestVersion: "V2.3.2",
   minimumVersion: "V2.3.2",
   downloadUrl: "",
   releaseNotes: "",
+  campaign: { ...emptyCampaign },
   source: "env",
   updatedAt: "",
 };
@@ -42,6 +53,22 @@ function defaultExpirationForRole(role) {
   return plusDays(role === "support" ? 10 : 30);
 }
 
+function dateTimeLocalValue(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const date = new Date(text);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (part) => String(part).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function campaignIsoValue(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const date = new Date(text);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+}
+
 function statusClass(item) {
   if (item.expired || item.status === "Expired") {
     return "border-red-500/35 bg-red-500/10 text-red-200";
@@ -53,11 +80,21 @@ function statusClass(item) {
 }
 
 function normalizeToolPolicyForm(input = {}) {
+  const campaign = input.campaign || emptyCampaign;
   return {
     latestVersion: String(input.latestVersion || "").trim(),
     minimumVersion: String(input.minimumVersion || "").trim(),
     downloadUrl: String(input.downloadUrl || "").trim(),
     releaseNotes: String(input.releaseNotes || "").trim(),
+    campaign: {
+      enabled: campaign.enabled !== false,
+      theme: String(campaign.theme || "mid_autumn").trim(),
+      badge: String(campaign.badge || "").trim(),
+      message: String(campaign.message || "").trim(),
+      ctaLabel: String(campaign.ctaLabel || "").trim(),
+      startAt: dateTimeLocalValue(campaign.startAt),
+      endAt: dateTimeLocalValue(campaign.endAt),
+    },
     source: String(input.source || "env").trim(),
     updatedAt: String(input.updatedAt || "").trim(),
   };
@@ -250,6 +287,17 @@ export default function Home() {
     setToolPolicyForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const updateCampaignForm = (event) => {
+    const { name, value, type, checked } = event.target;
+    setToolPolicyForm((prev) => ({
+      ...prev,
+      campaign: {
+        ...(prev.campaign || emptyCampaign),
+        [name]: type === "checkbox" ? checked : value,
+      },
+    }));
+  };
+
   const resetForm = () => {
     setEditingKey("");
     setForm({ ...emptyForm, expiration: defaultExpirationForRole(session?.role) });
@@ -294,6 +342,11 @@ export default function Home() {
         minimumVersion: toolPolicyForm.minimumVersion,
         downloadUrl: toolPolicyForm.downloadUrl,
         releaseNotes: toolPolicyForm.releaseNotes,
+        campaign: {
+          ...(toolPolicyForm.campaign || emptyCampaign),
+          startAt: campaignIsoValue(toolPolicyForm.campaign?.startAt),
+          endAt: campaignIsoValue(toolPolicyForm.campaign?.endAt),
+        },
       };
       const res = await fetch("/api/tool-policy", {
         method: "PUT",
@@ -301,13 +354,13 @@ export default function Home() {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Khong luu duoc cau hinh update");
+      if (!res.ok) throw new Error(data.error || "Khong luu duoc cau hinh tool");
       const nextPolicy = normalizeToolPolicyForm(data.item || payload);
       setToolPolicy(nextPolicy);
       setToolPolicyForm(nextPolicy);
-      setNotice("Da cap nhat thong bao update cho tool");
+      setNotice("Da cap nhat cau hinh update va campaign cho tool");
     } catch (err) {
-      setError(err.message || "Loi luu cau hinh update");
+      setError(err.message || "Loi luu cau hinh tool");
     } finally {
       setLoading(false);
     }
@@ -649,6 +702,145 @@ export default function Home() {
               ) : (
                 <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-slate-300">
                   Tai khoan support chi duoc xem cau hinh update, khong duoc sua.
+                </div>
+              )}
+            </form>
+
+            <form
+              onSubmit={saveToolPolicy}
+              className="rounded-3xl border border-amber-400/30 bg-gradient-to-br from-amber-500/10 via-slate-900/90 to-rose-500/10 p-5"
+            >
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-300">
+                    Marketing Campaign
+                  </p>
+                  <h2 className="mt-1 text-lg font-black">Sticker quảng cáo trên header tool</h2>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Đổi nội dung, theme và thời gian hiển thị theo từng sự kiện mà không cần build lại tool.
+                  </p>
+                </div>
+                <label className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs font-bold text-slate-200">
+                  <input
+                    type="checkbox"
+                    name="enabled"
+                    checked={toolPolicyForm.campaign?.enabled !== false}
+                    onChange={updateCampaignForm}
+                    disabled={isSupport}
+                    className="h-4 w-4 accent-amber-400"
+                  />
+                  Bật sticker
+                </label>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-xs font-bold text-slate-300">Theme sự kiện</span>
+                  <select
+                    name="theme"
+                    value={toolPolicyForm.campaign?.theme || "mid_autumn"}
+                    onChange={updateCampaignForm}
+                    disabled={isSupport}
+                    className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-amber-400 disabled:opacity-70"
+                  >
+                    <option value="mid_autumn">Trung Thu - Trăng / Lồng đèn / Múa lân</option>
+                    <option value="tet">Tết - Lì xì / Hoa mai</option>
+                    <option value="christmas">Noel - Cây thông / Tuyết</option>
+                    <option value="new_year">Năm mới - Pháo hoa</option>
+                    <option value="summer">Mùa hè - Nắng / Biển</option>
+                    <option value="custom">Custom - Trung tính</option>
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-xs font-bold text-slate-300">Nhãn nổi bật</span>
+                  <input
+                    name="badge"
+                    value={toolPolicyForm.campaign?.badge || ""}
+                    onChange={updateCampaignForm}
+                    disabled={isSupport}
+                    maxLength={48}
+                    placeholder="TRUNG THU SALE"
+                    className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-amber-400 disabled:opacity-70"
+                  />
+                </label>
+              </div>
+
+              <label className="mt-3 block">
+                <span className="text-xs font-bold text-slate-300">Nội dung chạy</span>
+                <textarea
+                  name="message"
+                  value={toolPolicyForm.campaign?.message || ""}
+                  onChange={updateCampaignForm}
+                  disabled={isSupport}
+                  maxLength={320}
+                  rows={3}
+                  className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-amber-400 disabled:opacity-70"
+                  placeholder="Mừng Trung Thu • Gói 6 tháng giảm 5% • Gói 1 năm giảm 10%"
+                />
+              </label>
+
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                <label className="block">
+                  <span className="text-xs font-bold text-slate-300">CTA</span>
+                  <input
+                    name="ctaLabel"
+                    value={toolPolicyForm.campaign?.ctaLabel || ""}
+                    onChange={updateCampaignForm}
+                    disabled={isSupport}
+                    maxLength={48}
+                    placeholder="Xem ưu đãi"
+                    className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-amber-400 disabled:opacity-70"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-bold text-slate-300">Bắt đầu</span>
+                  <input
+                    type="datetime-local"
+                    name="startAt"
+                    value={toolPolicyForm.campaign?.startAt || ""}
+                    onChange={updateCampaignForm}
+                    disabled={isSupport}
+                    className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-amber-400 disabled:opacity-70"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-bold text-slate-300">Kết thúc</span>
+                  <input
+                    type="datetime-local"
+                    name="endAt"
+                    value={toolPolicyForm.campaign?.endAt || ""}
+                    onChange={updateCampaignForm}
+                    disabled={isSupport}
+                    className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-amber-400 disabled:opacity-70"
+                  />
+                </label>
+              </div>
+
+              <div className="mt-4 overflow-hidden rounded-2xl border border-amber-400/30 bg-slate-950/80 p-3">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="rounded-full bg-amber-400 px-2 py-1 font-black text-slate-950">
+                    {toolPolicyForm.campaign?.badge || "SALE"}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate font-semibold text-amber-100">
+                    {toolPolicyForm.campaign?.message || "Nhập nội dung quảng cáo"}
+                  </span>
+                  <span className="rounded-lg border border-amber-300/30 bg-amber-300/10 px-2 py-1 font-bold text-amber-200">
+                    {toolPolicyForm.campaign?.ctaLabel || "Xem ưu đãi"}
+                  </span>
+                </div>
+              </div>
+
+              {!isSupport ? (
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-5 w-full rounded-2xl bg-amber-400 px-4 py-3 text-sm font-black text-slate-950 hover:bg-amber-300 disabled:opacity-60"
+                >
+                  Lưu sticker campaign
+                </button>
+              ) : (
+                <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-slate-300">
+                  Tài khoản support chỉ được xem campaign, không được sửa.
                 </div>
               )}
             </form>
